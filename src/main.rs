@@ -1,5 +1,7 @@
 use clap::Parser;
+use colored::*;
 use dotenv;
+use itertools::Itertools;
 use serde_json::Value;
 
 const LAT: f32 = 55.75;
@@ -42,25 +44,41 @@ fn main() -> Result<(), reqwest::Error> {
     );
     let weather: Value = reqwest::blocking::get(url)?.json()?;
 
-    println!("Place: {:?}", weather["name"].as_str().unwrap_or_default());
-    println!(
-        "Main: {:?}",
-        weather["weather"][0]["main"].as_str().unwrap_or_default()
-    );
-    println!(
-        "Description: {:?}",
-        weather["weather"][0]["description"]
-            .as_str()
-            .unwrap_or_default()
-    );
-    println!(
-        "Temperature: {:?}",
-        weather["main"]["temp"].as_f64().unwrap_or_default()
-    );
-    println!(
-        "Feels like: {:?}",
-        weather["main"]["feels_like"].as_f64().unwrap_or_default()
-    );
+    let place: &str = weather["name"].as_str().unwrap_or_default();
+    let main: &str = weather["weather"][0]["main"].as_str().unwrap_or_default();
+    let description: &str = weather["weather"][0]["description"]
+        .as_str()
+        .unwrap_or_default();
+    let temperature: String = weather["main"]["temp"]
+        .as_f64()
+        .unwrap_or_default()
+        .to_string();
+    let feels_like: String = weather["main"]["feels_like"]
+        .as_f64()
+        .unwrap_or_default()
+        .to_string();
+
+    let result = vec![
+        "Place:\t\t",
+        place,
+        "Main:\t\t",
+        main,
+        "Description:\t",
+        description,
+        "Temperature:\t",
+        temperature.as_str(),
+        "Feels like:\t",
+        feels_like.as_str(),
+    ]
+    .into_iter();
+
+    for (title, value) in result.tuples() {
+        println!(
+            "{}{}",
+            title.bold().on_bright_green(),
+            value.on_bright_green()
+        );
+    }
 
     Ok(())
 }
