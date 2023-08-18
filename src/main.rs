@@ -1,6 +1,6 @@
 use clap::Parser;
 use dotenv;
-use serde::Deserialize;
+use serde_json::Value;
 
 const LAT: f32 = 55.75;
 const LON: f32 = 37.77;
@@ -12,34 +12,6 @@ struct Args {
     /// Number of days for the forecast
     #[arg(short, default_value_t = 0)]
     days: u8,
-}
-
-#[derive(Deserialize, Debug)]
-struct Coord {
-    lat: f32,
-    lon: f32,
-}
-
-#[derive(Deserialize, Debug)]
-struct Weather {
-    id: u32,
-    main: String,
-    description: String,
-    icon: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct CurrentWeatherMain {
-    temp: f32,
-    feels_like: f32,
-}
-
-#[derive(Deserialize, Debug)]
-struct CurrentWeather {
-    coord: Coord,
-    weather: Vec<Weather>,
-    base: String,
-    main: CurrentWeatherMain,
 }
 
 fn main() -> Result<(), reqwest::Error> {
@@ -68,12 +40,27 @@ fn main() -> Result<(), reqwest::Error> {
     let url: String = format!(
         "https://api.openweathermap.org/data/2.5/{method}?lat={LAT}&lon={LON}&appid={api_key}&units=metric&cnt={cnt}"
     );
-    let weather: CurrentWeather = reqwest::blocking::get(url)?.json()?;
+    let weather: Value = reqwest::blocking::get(url)?.json()?;
 
-    println!("Main: {:?}", weather.weather[0].main);
-    println!("Description: {:?}", weather.weather[0].description);
-    println!("Temperature: {:?}", weather.main.temp);
-    println!("Feels like: {:?}", weather.main.feels_like);
+    println!("Place: {:?}", weather["name"].as_str().unwrap_or_default());
+    println!(
+        "Main: {:?}",
+        weather["weather"][0]["main"].as_str().unwrap_or_default()
+    );
+    println!(
+        "Description: {:?}",
+        weather["weather"][0]["description"]
+            .as_str()
+            .unwrap_or_default()
+    );
+    println!(
+        "Temperature: {:?}",
+        weather["main"]["temp"].as_f64().unwrap_or_default()
+    );
+    println!(
+        "Feels like: {:?}",
+        weather["main"]["feels_like"].as_f64().unwrap_or_default()
+    );
 
     Ok(())
 }
